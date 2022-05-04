@@ -17,12 +17,14 @@ import (
 func Start() {
 	router := mux.NewRouter()
 	authRepository := domain.NewAuthRepositoryDb(getDBClient())
-	ah := AuthHandler{service: service.NewLoginService(authRepository)}
+	ah := AuthHandler{service: service.NewLoginService(authRepository, domain.GetRolePermissions())}
 
-	router.HandleFunc("/auth/login", ah.Login).Methods("POST")
+	router.HandleFunc("/auth/login", ah.Login).Methods(http.MethodPost)
+	router.HandleFunc("/auth/verify", ah.Verify).Methods(http.MethodGet)
+
 	address := os.Getenv("SERVER_ADDRESS")
 	port := os.Getenv("SERVER_PORT")
-	log.Println(fmt.Sprintf("Starting OAuth server on %s:%s...", address, port))
+	log.Printf("Starting OAuth server on %s:%s...\n", address, port)
 	log.Fatal(http.ListenAndServe(fmt.Sprintf("%s:%s", address, port), router))
 
 }
