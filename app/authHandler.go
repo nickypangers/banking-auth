@@ -49,10 +49,5 @@ func (h AuthHandler) Verify(w http.ResponseWriter, r *http.Request) {
 		m["error"] = err.Error()
 	}
 	m["isAuthorized"] = isAuthorized
-	// if err != nil {
-	// 	w.WriteHeader(http.StatusUnauthorized)
-	// } else {
-	// 	w.WriteHeader(http.StatusOK)
-	// }
 	json.NewEncoder(w).Encode(m)
 }
