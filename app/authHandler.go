@@ -42,24 +42,17 @@ func (h AuthHandler) Verify(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "Route name is required")
 		return
 	}
+	m := make(map[string]interface{})
 	isAuthorized, err := h.service.Verify(token, routeName)
-	if err != nil {
-		w.WriteHeader(http.StatusUnauthorized)
-	} else {
-		w.WriteHeader(http.StatusOK)
-	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]bool{
-		"isAuthorized": isAuthorized,
-	})
+	if err != nil {
+		m["error"] = err.Error()
+	}
+	m["isAuthorized"] = isAuthorized
 	// if err != nil {
 	// 	w.WriteHeader(http.StatusUnauthorized)
-	// 	fmt.Fprintf(w, "%s", err.Error())
-	// 	return
+	// } else {
+	// 	w.WriteHeader(http.StatusOK)
 	// }
-	// w.Header().Set("Content-Type", "application/json")
-	// w.WriteHeader(http.StatusOK)
-	// json.NewEncoder(w).Encode(map[string]bool{
-	// 	"isAuthorized": isAuthorized,
-	// })
+	json.NewEncoder(w).Encode(m)
 }
