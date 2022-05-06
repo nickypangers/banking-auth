@@ -46,7 +46,7 @@ func (h AuthHandler) Verify(w http.ResponseWriter, r *http.Request) {
 	isAuthorized, err := h.service.Verify(token, routeName)
 	w.Header().Set("Content-Type", "application/json")
 	if err != nil {
-		m["error"] = err.Error()
+		fmt.Println(err.Error())
 	}
 	m["isAuthorized"] = isAuthorized
 	json.NewEncoder(w).Encode(m)
