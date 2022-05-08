@@ -31,6 +31,9 @@ func (h AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 func (h AuthHandler) Verify(w http.ResponseWriter, r *http.Request) {
 	token := r.URL.Query().Get("token")
 	routeName := r.URL.Query().Get("routeName")
+	customerId := r.URL.Query().Get("customer_id")
+
+	fmt.Println(customerId)
 
 	if token == "" {
 		w.WriteHeader(http.StatusUnauthorized)
@@ -43,7 +46,7 @@ func (h AuthHandler) Verify(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	m := make(map[string]interface{})
-	isAuthorized, err := h.service.Verify(token, routeName)
+	isAuthorized, err := h.service.Verify(token, routeName, customerId)
 	w.Header().Set("Content-Type", "application/json")
 	if err != nil {
 		fmt.Println(err.Error())

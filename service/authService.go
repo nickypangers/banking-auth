@@ -10,7 +10,7 @@ import (
 
 type AuthService interface {
 	Login(dto.LoginRequest) (*string, error)
-	Verify(string, string) (bool, error)
+	Verify(string, string, string) (bool, error)
 }
 
 type DefaultAuthService struct {
@@ -30,7 +30,7 @@ func (s DefaultAuthService) Login(req dto.LoginRequest) (*string, error) {
 	return token, nil
 }
 
-func (s DefaultAuthService) Verify(tokenString, routeName string) (bool, error) {
+func (s DefaultAuthService) Verify(tokenString, routeName, customerId string) (bool, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		return []byte(domain.HMAC_SAMPLE_SECRET), nil
 	})
@@ -41,10 +41,18 @@ func (s DefaultAuthService) Verify(tokenString, routeName string) (bool, error) 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
 
 		role := claims["role"].(string)
-		isAuthorizedFor := s.rolePermissions.IsAuthorizedFor(role, routeName)
+
+		if role == "user" {
+			if claims["customer_id"].(string) != customerId {
+				return false, errors.New("customer id does not match")
+			}
+		}
+
+		isAuthorizedFor := s.rolePermissions.IsAuthorizedFor(role, routeName, customerId)
 		if !isAuthorizedFor {
 			return false, errors.New("unauthorized")
 		}
+
 		return isAuthorizedFor, nil
 	}
 

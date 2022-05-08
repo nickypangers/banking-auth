@@ -6,7 +6,7 @@ type RolePermissions struct {
 	rolePermissions map[string][]string
 }
 
-func (p RolePermissions) IsAuthorizedFor(role string, routeName string) bool {
+func (p RolePermissions) IsAuthorizedFor(role string, routeName, customerId string) bool {
 	perms := p.rolePermissions[role]
 	for _, r := range perms {
 		if r == strings.TrimSpace(routeName) {
