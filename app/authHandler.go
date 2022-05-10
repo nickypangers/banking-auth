@@ -19,10 +19,10 @@ func (h AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	token, err := h.service.Login(loginRequest)
-	if err != nil {
-		w.WriteHeader(http.StatusUnauthorized)
-		fmt.Fprintf(w, "%s", err.Error())
+	token, appErr := h.service.Login(loginRequest)
+	if appErr != nil {
+		w.WriteHeader(appErr.Code)
+		fmt.Fprintf(w, "%s", appErr.AsMessage().Message)
 		return
 	}
 	fmt.Fprintf(w, *token)
@@ -46,10 +46,10 @@ func (h AuthHandler) Verify(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	m := make(map[string]interface{})
-	isAuthorized, err := h.service.Verify(token, routeName, customerId)
+	isAuthorized, appErr := h.service.Verify(token, routeName, customerId)
 	w.Header().Set("Content-Type", "application/json")
-	if err != nil {
-		fmt.Println(err.Error())
+	if appErr != nil {
+		fmt.Println(appErr.AsMessage())
 	}
 	m["isAuthorized"] = isAuthorized
 	json.NewEncoder(w).Encode(m)

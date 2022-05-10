@@ -1,16 +1,15 @@
 package service
 
 import (
-	"errors"
-
 	"github.com/golang-jwt/jwt"
 	"github.com/nickypangers/banking-auth/domain"
 	"github.com/nickypangers/banking-auth/dto"
+	"github.com/nickypangers/banking-lib/errs"
 )
 
 type AuthService interface {
-	Login(dto.LoginRequest) (*string, error)
-	Verify(string, string, string) (bool, error)
+	Login(dto.LoginRequest) (*string, *errs.AppError)
+	Verify(string, string, string) (bool, *errs.AppError)
 }
 
 type DefaultAuthService struct {
@@ -18,7 +17,7 @@ type DefaultAuthService struct {
 	rolePermissions domain.RolePermissions
 }
 
-func (s DefaultAuthService) Login(req dto.LoginRequest) (*string, error) {
+func (s DefaultAuthService) Login(req dto.LoginRequest) (*string, *errs.AppError) {
 	login, err := s.repo.ById(req.Username, req.Password)
 	if err != nil {
 		return nil, err
@@ -30,12 +29,12 @@ func (s DefaultAuthService) Login(req dto.LoginRequest) (*string, error) {
 	return token, nil
 }
 
-func (s DefaultAuthService) Verify(tokenString, routeName, customerId string) (bool, error) {
+func (s DefaultAuthService) Verify(tokenString, routeName, customerId string) (bool, *errs.AppError) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		return []byte(domain.HMAC_SAMPLE_SECRET), nil
 	})
 	if err != nil {
-		return false, err
+		return false, errs.NewUnexpectedNotFoundError(err.Error())
 	}
 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
@@ -44,19 +43,19 @@ func (s DefaultAuthService) Verify(tokenString, routeName, customerId string) (b
 
 		if role == "user" {
 			if claims["customer_id"].(string) != customerId {
-				return false, errors.New("customer id does not match")
+				return false, errs.NewUnexpectedNotFoundError("customer id does not match")
 			}
 		}
 
 		isAuthorizedFor := s.rolePermissions.IsAuthorizedFor(role, routeName, customerId)
 		if !isAuthorizedFor {
-			return false, errors.New("unauthorized")
+			return false, errs.NewAuthorizationError("unauthorized")
 		}
 
 		return isAuthorizedFor, nil
 	}
 
-	return false, errors.New("invalid token")
+	return false, errs.NewUnexpectedNotFoundError("invalid token")
 }
 
 func NewLoginService(repo domain.AuthRepository, permissions domain.RolePermissions) DefaultAuthService {
