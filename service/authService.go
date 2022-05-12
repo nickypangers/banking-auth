@@ -9,7 +9,7 @@ import (
 
 type AuthService interface {
 	Login(dto.LoginRequest) (*string, *errs.AppError)
-	Verify(string, string, string) (bool, *errs.AppError)
+	Verify(map[string]string) (bool, *errs.AppError)
 }
 
 type DefaultAuthService struct {
@@ -29,8 +29,8 @@ func (s DefaultAuthService) Login(req dto.LoginRequest) (*string, *errs.AppError
 	return token, nil
 }
 
-func (s DefaultAuthService) Verify(tokenString, routeName, customerId string) (bool, *errs.AppError) {
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+func (s DefaultAuthService) Verify(params map[string]string) (bool, *errs.AppError) {
+	token, err := jwt.Parse(params["token"], func(token *jwt.Token) (interface{}, error) {
 		return []byte(domain.HMAC_SAMPLE_SECRET), nil
 	})
 	if err != nil {
@@ -42,12 +42,12 @@ func (s DefaultAuthService) Verify(tokenString, routeName, customerId string) (b
 		role := claims["role"].(string)
 
 		if role == "user" {
-			if claims["customer_id"].(string) != customerId {
+			if claims["customer_id"].(string) != params["customer_id"] {
 				return false, errs.NewUnexpectedNotFoundError("customer id does not match")
 			}
 		}
 
-		isAuthorizedFor := s.rolePermissions.IsAuthorizedFor(role, routeName, customerId)
+		isAuthorizedFor := s.rolePermissions.IsAuthorizedFor(role, params["routeName"], params["customer_id"])
 		if !isAuthorizedFor {
 			return false, errs.NewAuthorizationError("unauthorized")
 		}

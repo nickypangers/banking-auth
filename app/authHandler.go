@@ -29,28 +29,56 @@ func (h AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h AuthHandler) Verify(w http.ResponseWriter, r *http.Request) {
-	token := r.URL.Query().Get("token")
-	routeName := r.URL.Query().Get("routeName")
-	customerId := r.URL.Query().Get("customer_id")
+	// token := r.URL.Query().Get("token")
+	// routeName := r.URL.Query().Get("routeName")
+	// customerId := r.URL.Query().Get("customer_id")
+	urlParams := make(map[string]string)
 
-	fmt.Println(customerId)
+	for k := range r.URL.Query() {
+		urlParams[k] = r.URL.Query().Get(k)
+	}
 
-	if token == "" {
-		w.WriteHeader(http.StatusUnauthorized)
-		fmt.Fprintf(w, "Token is required")
-		return
+	if urlParams["token"] != "" {
+		isAuthorized, err := h.service.Verify(urlParams)
+		if err != nil {
+			writeResponse(w, http.StatusForbidden, err.AsMessage())
+		} else {
+			if isAuthorized {
+				m := make(map[string]bool)
+				m["isAuthorized"] = true
+				writeResponse(w, http.StatusOK, m)
+				return
+			} else {
+				writeResponse(w, http.StatusForbidden, err.AsMessage())
+			}
+
+		}
+	} else {
+		writeResponse(w, http.StatusForbidden, "token is required")
 	}
-	if routeName == "" {
-		w.WriteHeader(http.StatusUnauthorized)
-		fmt.Fprintf(w, "Route name is required")
-		return
-	}
-	m := make(map[string]interface{})
-	isAuthorized, appErr := h.service.Verify(token, routeName, customerId)
+
+	// if token == "" {
+	// 	w.WriteHeader(http.StatusUnauthorized)
+	// 	fmt.Fprintf(w, "Token is required")
+	// 	return
+	// }
+	// if routeName == "" {
+	// 	w.WriteHeader(http.StatusUnauthorized)
+	// 	fmt.Fprintf(w, "Route name is required")
+	// 	return
+	// }
+	// m := make(map[string]interface{})
+	// isAuthorized, appErr := h.service.Verify(token, routeName, customerId)
+	// w.Header().Set("Content-Type", "application/json")
+	// if appErr != nil {
+	// 	fmt.Println(appErr.AsMessage())
+	// }
+	// m["isAuthorized"] = isAuthorized
+	// json.NewEncoder(w).Encode(m)
+}
+
+func writeResponse(w http.ResponseWriter, code int, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
-	if appErr != nil {
-		fmt.Println(appErr.AsMessage())
-	}
-	m["isAuthorized"] = isAuthorized
-	json.NewEncoder(w).Encode(m)
+	w.WriteHeader(code)
+	json.NewEncoder(w).Encode(data)
 }
