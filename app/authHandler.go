@@ -39,46 +39,30 @@ func (h AuthHandler) Verify(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if urlParams["token"] != "" {
-		isAuthorized, err := h.service.Verify(urlParams)
+		err := h.service.Verify(urlParams)
 		if err != nil {
-			writeResponse(w, http.StatusForbidden, err.AsMessage())
+			writeResponse(w, http.StatusForbidden, notAuthroizedResponse(err.Message))
 		} else {
-			if isAuthorized {
-				m := make(map[string]bool)
-				m["isAuthorized"] = true
-				writeResponse(w, http.StatusOK, m)
-				return
-			} else {
-				writeResponse(w, http.StatusForbidden, err.AsMessage())
-			}
-
+			writeResponse(w, http.StatusOK, authorizedResponse())
 		}
 	} else {
 		writeResponse(w, http.StatusForbidden, "token is required")
 	}
-
-	// if token == "" {
-	// 	w.WriteHeader(http.StatusUnauthorized)
-	// 	fmt.Fprintf(w, "Token is required")
-	// 	return
-	// }
-	// if routeName == "" {
-	// 	w.WriteHeader(http.StatusUnauthorized)
-	// 	fmt.Fprintf(w, "Route name is required")
-	// 	return
-	// }
-	// m := make(map[string]interface{})
-	// isAuthorized, appErr := h.service.Verify(token, routeName, customerId)
-	// w.Header().Set("Content-Type", "application/json")
-	// if appErr != nil {
-	// 	fmt.Println(appErr.AsMessage())
-	// }
-	// m["isAuthorized"] = isAuthorized
-	// json.NewEncoder(w).Encode(m)
 }
 
 func writeResponse(w http.ResponseWriter, code int, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 	json.NewEncoder(w).Encode(data)
+}
+
+func notAuthroizedResponse(msg string) map[string]interface{} {
+	return map[string]interface{}{
+		"isAuthorized": false,
+		"message":      msg,
+	}
+}
+
+func authorizedResponse() map[string]bool {
+	return map[string]bool{"isAuthorized": true}
 }

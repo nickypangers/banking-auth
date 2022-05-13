@@ -15,6 +15,14 @@ type RefreshTokenClaims struct {
 	jwt.StandardClaims
 }
 
+type Claims struct {
+	CustomerId string   `json:"customer_id"`
+	Accounts   []string `json:"accounts"`
+	Username   string   `json:"username"`
+	Role       string   `json:"role"`
+	jwt.StandardClaims
+}
+
 type AccessTokenClaims struct {
 	CustomerId string   `json:"customer_id"`
 	Accounts   []string `json:"accounts"`
@@ -24,11 +32,11 @@ type AccessTokenClaims struct {
 	jwt.StandardClaims
 }
 
-func (c AccessTokenClaims) IsUserRole() bool {
+func (c Claims) IsUserRole() bool {
 	return c.Role == "user"
 }
 
-func (c AccessTokenClaims) IsValidAccountId(accountId string) bool {
+func (c Claims) IsValidAccountId(accountId string) bool {
 	if accountId != "" {
 		accountFound := false
 		for _, a := range c.Accounts {
@@ -42,15 +50,7 @@ func (c AccessTokenClaims) IsValidAccountId(accountId string) bool {
 	return true
 }
 
-// func BuildClaimsFromJwtMapClaims(mapClaims jwt.MapClaims) (*AccessTokenClaims, error) {
-// 	bytes, err := json.Marshal(mapClaims)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// }
-
-func (c AccessTokenClaims) IsRequestVerifiedWithTokenClaims(urlParams map[string]string) bool {
+func (c Claims) IsRequestVerifiedWithTokenClaims(urlParams map[string]string) bool {
 	if c.CustomerId != urlParams["customer_id"] {
 		return false
 	}

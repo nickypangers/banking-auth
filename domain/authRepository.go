@@ -18,7 +18,7 @@ type AuthRepository interface {
 
 func (d AuthRepositoryDb) ById(username, password string) (*Login, *errs.AppError) {
 	var login Login
-	sqlVerify := "select username, u.customer_id, role, GROUP_CONCAT(a.account_id) as account_numbers from users u left join accounts a on a.customer_id = u.customer_id where username = ? and password = ? group by a.customer_id;"
+	sqlVerify := "select username, u.customer_id, role, GROUP_CONCAT(a.account_id) as account_numbers from users u left join accounts a on a.customer_id = u.customer_id where username = ? and password = ?;"
 	err := d.client.Get(&login, sqlVerify, username, password)
 	if err != nil {
 		if err == sql.ErrNoRows {
